@@ -35,7 +35,6 @@ func getDatabase() *sql.DB {
 		log.Fatal(err)
 	}
 
-	fmt.Println(cfg)
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Dbname)
 
 	database, err := sql.Open("postgres", psqlInfo)
