@@ -26,7 +26,7 @@ type config struct {
 func getDatabase() *sql.DB {
 	var cfg config
 
-	content, err := ioutil.ReadFile("./kitex_info.yaml")
+	content, err := ioutil.ReadFile("./application.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
