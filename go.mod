@@ -9,6 +9,7 @@ require (
 	github.com/cloudwego/kitex v0.6.1
 	github.com/kitex-contrib/registry-etcd v0.1.0
 	github.com/lib/pq v1.10.9
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

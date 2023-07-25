@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"log"
 	demo "rpc_server/kitex_gen/demo"
 	"strconv"
@@ -13,22 +15,38 @@ import (
 // StudentServiceImpl implements the last service interface defined in the IDL.
 type StudentServiceImpl struct{}
 
-const (
-	host     = "corax.com.cn"
-	port     = 5432
-	user     = "postgres"
-	password = "root"
-	dbname   = "student"
-)
+type config struct {
+	Host     string `yaml:"Host"`
+	Port     string `yaml:"Port"`
+	User     string `yaml:"User"`
+	Password string `yaml:"Password"`
+	Dbname   string `yaml:"Dbname"`
+}
 
-func QueryFromDatabase(id int32, student *demo.Student) error {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+func getDatabase() *sql.DB {
+	var cfg config
+
+	content, err := ioutil.ReadFile("./kitex_info.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err = yaml.Unmarshal(content, &cfg); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(cfg)
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Dbname)
 
 	database, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		log.Fatal(err)
-		return err
 	}
+	return database
+}
+
+func QueryFromDatabase(id int32, student *demo.Student) error {
+	database := getDatabase()
 	student.Id = -1
 
 	query, err := database.Query("select * from student where id = " + strconv.Itoa(int(id)))
@@ -72,45 +90,39 @@ func QueryFromDatabase(id int32, student *demo.Student) error {
 }
 
 func InsertIntoDatabase(student *demo.Student) error {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	database := getDatabase()
 
-	database, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	tx, err := database.Begin()
+	tx, _ := database.Begin()
 
 	var cid = -1
 	var cname string
 	var caddr string
-	query, err := database.Query("select * from college where name = " + "'" + student.College.Name + "'")
+	query, _ := database.Query("select * from college where name = " + "'" + student.College.Name + "'")
 	for query.Next() {
-		err = query.Scan(&cid, &cname, &caddr)
+		_ = query.Scan(&cid, &cname, &caddr)
 	}
 	if cid == -1 {
 		stmt, _ := tx.Prepare("insert into college(name, address) values ($1, $2)")
-		_, err = stmt.Exec(student.College.Name, student.College.Address)
-		err = tx.Commit()
+		_, _ = stmt.Exec(student.College.Name, student.College.Address)
+		_ = tx.Commit()
 
-		query, err = database.Query("select * from college where name = " + "'" + student.College.Name + "'")
+		query, _ = database.Query("select * from college where name = " + "'" + student.College.Name + "'")
 		for query.Next() {
-			err = query.Scan(&cid, &cname, &caddr)
+			_ = query.Scan(&cid, &cname, &caddr)
 		}
 
-		tx, err = database.Begin()
+		tx, _ = database.Begin()
 	}
-	stmt, err := tx.Prepare("insert into student values ($1, $2, $3, $4)")
+	stmt, _ := tx.Prepare("insert into student values ($1, $2, $3, $4)")
 
-	_, err = stmt.Exec(student.Id, student.Name, cid, student.Sex)
+	_, _ = stmt.Exec(student.Id, student.Name, cid, student.Sex)
 
 	for i := 0; i < len(student.Email); i++ {
-		stmt, err = tx.Prepare("insert into email values ($1, $2)")
-		_, err = stmt.Exec(student.Id, student.Email[i])
+		stmt, _ = tx.Prepare("insert into email values ($1, $2)")
+		_, _ = stmt.Exec(student.Id, student.Email[i])
 	}
 
-	err = tx.Commit()
+	_ = tx.Commit()
 	return nil
 }
 
