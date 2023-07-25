@@ -1,6 +1,0 @@
-# add configuration here
-Host: corax.com.cn
-Port: 5432
-User: postgres
-Password: root
-Dbname: student
