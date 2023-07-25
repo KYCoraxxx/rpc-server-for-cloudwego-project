@@ -1,3 +1,5 @@
 kitexinfo:
    ServiceName: 'rpc_server'
    ToolVersion: 'v0.6.1'
+databaseinfo:
+# add configuration here
