@@ -131,24 +131,30 @@ var studentMap = make(map[int32]*demo.Student)
 func (s *StudentServiceImpl) Register(ctx context.Context, student *demo.Student) (resp *demo.RegisterResp, err error) {
 	resp = demo.NewRegisterResp()
 	var newStudent demo.Student
-	err = QueryFromDatabase(student.Id, &newStudent)
-	if err != nil {
-		resp.Success = false
-		resp.Message = "Internal Exception"
-	}
-	if newStudent.Id > 0 {
+	if _, exist := studentMap[student.Id]; exist {
 		resp.Success = false
 		resp.Message = "Register Failed: Student Information Already Exists"
 	} else {
-		err = InsertIntoDatabase(student)
+		err = QueryFromDatabase(student.Id, &newStudent)
 		if err != nil {
 			resp.Success = false
 			resp.Message = "Internal Exception"
 		}
-		resp.Success = true
-		resp.Message = "Register Success"
+		if newStudent.Id > 0 {
+			studentMap[student.Id] = &newStudent
+			resp.Success = false
+			resp.Message = "Register Failed: Student Information Already Exists"
+		} else {
+			err = InsertIntoDatabase(student)
+			if err != nil {
+				resp.Success = false
+				resp.Message = "Internal Exception"
+			}
+			resp.Success = true
+			resp.Message = "Register Success"
+		}
+		fmt.Println(resp)
 	}
-	fmt.Println(resp)
 	return
 }
 
