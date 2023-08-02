@@ -1,3 +1,3 @@
 /default.etcd
-application.yaml
 /.idea
+rpc_server
